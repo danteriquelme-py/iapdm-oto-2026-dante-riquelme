@@ -27,8 +27,6 @@ Desarrollar una aplicación Android que permita registrar empleados con su nombr
 
 ## Vista previa
 
-> Reemplazá estas imágenes por tus propias capturas (ver [Capturas de pantalla](#-capturas-de-pantalla) más abajo).
-
 | Lista de empleados | Alta de empleado | Detalle de tarjeta |
 | :---: | :---: | :---: |
 | ![Lista de empleados](docs/screenshots/lista.png) | ![Formulario de alta](docs/screenshots/alta.png) | ![Tarjeta de empleado](docs/screenshots/tarjeta.png) |
