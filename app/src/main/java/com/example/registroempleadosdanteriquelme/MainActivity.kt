@@ -96,7 +96,6 @@ val imagenesAyuda = listOf(
 fun placeholderPara(indice: Int): Int =
     if (indice % 2 == 0) fotosGatos.random() else fotosPerros.random()
 
-/** Deja solo dígitos (máx. 8) e inserta las barras: 01/02/2026. */
 fun formatearFecha(entrada: String): String {
     val digitos = entrada.filter { it.isDigit() }.take(8)
     return buildString {
@@ -107,7 +106,6 @@ fun formatearFecha(entrada: String): String {
     }
 }
 
-/** Verifica que sea una fecha real con formato DD/MM/AAAA. */
 fun fechaValida(fecha: String): Boolean {
     if (!Regex("""\d{2}/\d{2}/\d{4}""").matches(fecha)) return false
     val (dia, mes, anio) = fecha.split("/").map { it.toInt() }
@@ -162,7 +160,6 @@ fun EmpleadosApp() {
     var mostrarDialogo by remember { mutableStateOf(false) }
     var contadorAltas by remember { mutableStateOf(0) }
 
-    // El botón "atrás" del teléfono vuelve a la lista en vez de cerrar la app.
     BackHandler(enabled = pantalla != Pantalla.Lista) {
         pantalla = Pantalla.Lista
     }
@@ -349,9 +346,6 @@ fun AgregarEmpleadoDialog(
     var salario by remember { mutableStateOf("") }
     var fecha by remember { mutableStateOf("") }
     var imagenUri by remember { mutableStateOf<Uri?>(null) }
-
-    // Selector de imagen de la galería. No necesita permisos: el sistema
-    // devuelve una URI con acceso temporal de lectura.
     val selectorImagen = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
     ) { uri: Uri? ->
@@ -375,7 +369,6 @@ fun AgregarEmpleadoDialog(
                     color = MaterialTheme.colorScheme.primary
                 )
 
-                // Foto circular: se toca para subir una imagen
                 Box(
                     modifier = Modifier
                         .size(100.dp)
