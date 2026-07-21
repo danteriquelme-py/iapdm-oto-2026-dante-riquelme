@@ -4,6 +4,7 @@ import android.net.Uri
 import android.os.Bundle
 import android.util.Log
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -95,6 +96,27 @@ val imagenesAyuda = listOf(
 fun placeholderPara(indice: Int): Int =
     if (indice % 2 == 0) fotosGatos.random() else fotosPerros.random()
 
+/** Deja solo dígitos (máx. 8) e inserta las barras: 01/02/2026. */
+fun formatearFecha(entrada: String): String {
+    val digitos = entrada.filter { it.isDigit() }.take(8)
+    return buildString {
+        for (i in digitos.indices) {
+            if (i == 2 || i == 4) append('/')
+            append(digitos[i])
+        }
+    }
+}
+
+/** Verifica que sea una fecha real con formato DD/MM/AAAA. */
+fun fechaValida(fecha: String): Boolean {
+    if (!Regex("""\d{2}/\d{2}/\d{4}""").matches(fecha)) return false
+    val (dia, mes, anio) = fecha.split("/").map { it.toInt() }
+    if (mes !in 1..12) return false
+    val bisiesto = (anio % 4 == 0 && anio % 100 != 0) || anio % 400 == 0
+    val diasPorMes = listOf(31, if (bisiesto) 29 else 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31)
+    return dia in 1..diasPorMes[mes - 1]
+}
+
 enum class Pantalla { Lista, About, Ayuda }
 
 class MainActivity : ComponentActivity() {
@@ -139,6 +161,11 @@ fun EmpleadosApp() {
     var pantalla by remember { mutableStateOf(Pantalla.Lista) }
     var mostrarDialogo by remember { mutableStateOf(false) }
     var contadorAltas by remember { mutableStateOf(0) }
+
+    // El botón "atrás" del teléfono vuelve a la lista en vez de cerrar la app.
+    BackHandler(enabled = pantalla != Pantalla.Lista) {
+        pantalla = Pantalla.Lista
+    }
 
     when (pantalla) {
         Pantalla.Lista -> ListaEmpleadosScreen(
@@ -402,7 +429,8 @@ fun AgregarEmpleadoDialog(
                     singleLine = true, modifier = Modifier.fillMaxWidth()
                 )
                 OutlinedTextField(
-                    value = salario, onValueChange = { salario = it },
+                    value = salario,
+                    onValueChange = { nuevo -> if (nuevo.all { it.isDigit() }) salario = nuevo },
                     label = { Text("Salario (en Gs.)") },
                     singleLine = true,
                     keyboardOptions = KeyboardOptions(
@@ -411,10 +439,21 @@ fun AgregarEmpleadoDialog(
                     modifier = Modifier.fillMaxWidth()
                 )
                 OutlinedTextField(
-                    value = fecha, onValueChange = { fecha = it },
+                    value = fecha,
+                    onValueChange = { fecha = formatearFecha(it) },
                     label = { Text("Fecha de contratación") },
                     placeholder = { Text("DD/MM/AAAA") },
-                    singleLine = true, modifier = Modifier.fillMaxWidth()
+                    singleLine = true,
+                    isError = fecha.isNotEmpty() && !fechaValida(fecha),
+                    supportingText = {
+                        if (fecha.isNotEmpty() && !fechaValida(fecha)) {
+                            Text("Formato inválido. Usá DD/MM/AAAA.")
+                        }
+                    },
+                    keyboardOptions = KeyboardOptions(
+                        keyboardType = androidx.compose.ui.text.input.KeyboardType.Number
+                    ),
+                    modifier = Modifier.fillMaxWidth()
                 )
 
                 Row(
@@ -424,19 +463,18 @@ fun AgregarEmpleadoDialog(
                     TextButton(onClick = onDismiss) { Text("Cancelar") }
                     Spacer(Modifier.width(8.dp))
                     Button(
+                        enabled = nombre.isNotBlank() && fechaValida(fecha),
                         onClick = {
-                            if (nombre.isNotBlank()) {
-                                onAgregar(
-                                    Empleado(
-                                        nombreCompleto = nombre.trim(),
-                                        cargo = cargo.trim(),
-                                        departamento = departamento.trim(),
-                                        salario = salario.trim(),
-                                        fechaContratacion = fecha.trim(),
-                                        imagenUri = imagenUri
-                                    )
+                            onAgregar(
+                                Empleado(
+                                    nombreCompleto = nombre.trim(),
+                                    cargo = cargo.trim(),
+                                    departamento = departamento.trim(),
+                                    salario = salario.trim(),
+                                    fechaContratacion = fecha.trim(),
+                                    imagenUri = imagenUri
                                 )
-                            }
+                            )
                         }
                     ) { Text("Guardar") }
                 }
@@ -473,7 +511,7 @@ fun AboutScreen(onVolver: () -> Unit) {
             contentAlignment = Alignment.Center
         ) {
             Text(
-                text = "Desarrollado por Dante Riquelme, para el Examen Final de Aplicación Android de Registro de Productos " +
+                text = "Desarrollado por Dante Riquelme, para el Examen de Aplicación Android de Registro de Productos " +
                         "Introducción a la Programación para Dispositivos Móviles.\n\n" +
                         "©Julio 2026",
                 style = MaterialTheme.typography.titleMedium,
@@ -506,11 +544,11 @@ fun AyudaScreen(onVolver: () -> Unit) {
     ) { innerPadding ->
         // TODO (Dante): reemplazá estos pasos por tu guía paso a paso.
         val pasos = listOf(
-            "Para agregar un nuevo empleado, se debe utilizar el botón +, que se encuentra en la esquina inferior derecha.",
-            "Luego, se deben completar los datos del formulario en la ventana emergente.",
-            "Para agregar una foto debemos hacer click en el placeholder circular para subir una imagen (opcional).",
-            "Por último, utilizamos \"Guardar\" para agregarlo a la lista.",
-            "Si queremos eliminar un Empleado cargado, basta con utilizar el botón \"Eliminar\" de cada tarjeta para borrarlo."
+            "Puedes utilizar el botón + (abajo a la derecha) para agregar un nuevo empleado.",
+            "Completá los datos del formulario en la ventana emergente.",
+            "Tocá la foto circular para subir una imagen (opcional).",
+            "Presioná \"Guardar\" para agregarlo a la lista.",
+            "Usá el botón \"Eliminar\" de cada tarjeta para borrarlo."
         )
         Column(
             modifier = Modifier
